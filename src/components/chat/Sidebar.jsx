@@ -219,17 +219,22 @@ function ServerRail({ mode, setMode, badgeCount, servers, activeServerId, onSele
 function ChannelRow({ channel, active, onClick }) {
   return (
     <button onClick={onClick} className={[
-      'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors text-left',
-      active ? 'bg-[#404249] text-white' : 'text-[#949BA4] hover:bg-[#35373C] hover:text-[#DCDDDE]',
+      'w-full flex items-center gap-1.5 px-2 py-[5px] rounded-md text-sm transition-colors duration-100 text-left group/ch',
+      active
+        ? 'bg-[#404249] text-white'
+        : 'text-[#72767d] hover:bg-[#35373C] hover:text-[#DCDDDE]',
     ].join(' ')}>
       {channel.type === 'voice' ? (
-        <span className="text-sm shrink-0">🔊</span>
+        <svg className="w-4 h-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+            d="M15.536 8.464a5 5 0 010 7.072M12 6a7.071 7.071 0 010 12M8.464 8.464a5 5 0 000 7.072" />
+        </svg>
       ) : (
-        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
         </svg>
       )}
-      <span className="truncate">{channel.name}</span>
+      <span className="truncate font-medium">{channel.name}</span>
     </button>
   )
 }
@@ -399,19 +404,22 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
             </div>
 
             {/* Channel list */}
-            <div className="flex-1 overflow-y-auto py-3 space-y-4">
+            <div className="flex-1 overflow-y-auto py-3 space-y-3">
               {/* Text channels */}
               <div>
-                <div className="flex items-center justify-between px-4 mb-1">
-                  <span className="text-[10px] font-semibold text-[#949BA4] uppercase tracking-widest">Kanallar</span>
+                <div className="flex items-center justify-between px-3 mb-0.5 group/sec">
+                  <span className="text-[10px] font-bold text-[#72767d] uppercase tracking-widest
+                    group-hover/sec:text-[#949BA4] transition-colors cursor-default select-none">
+                    Kanallar
+                  </span>
                   <button onClick={() => openCreate('text')} title="Metin Kanalı Oluştur"
-                    className="text-[#949BA4] hover:text-white transition-colors">
+                    className="text-[#72767d] hover:text-white transition-colors opacity-0 group-hover/sec:opacity-100 p-0.5 rounded">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
                 </div>
-                <div className="space-y-0.5 px-2">
+                <div className="space-y-px px-2">
                   {loading ? <ChannelSkeleton /> : textChannels.map((ch) => (
                     <ChannelRow
                       key={ch.id} channel={ch}
@@ -422,20 +430,26 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
                 </div>
               </div>
 
+              {/* Divider */}
+              <div className="mx-3 h-px bg-[#3f4147]" />
+
               {/* Voice channels */}
               <div>
-                <div className="flex items-center justify-between px-4 mb-1">
-                  <span className="text-[10px] font-semibold text-[#949BA4] uppercase tracking-widest">Ses Kanalları</span>
+                <div className="flex items-center justify-between px-3 mb-0.5 group/sec">
+                  <span className="text-[10px] font-bold text-[#72767d] uppercase tracking-widest
+                    group-hover/sec:text-[#949BA4] transition-colors cursor-default select-none">
+                    Ses Kanalları
+                  </span>
                   <button onClick={() => openCreate('voice')} title="Ses Kanalı Oluştur"
-                    className="text-[#949BA4] hover:text-white transition-colors">
+                    className="text-[#72767d] hover:text-white transition-colors opacity-0 group-hover/sec:opacity-100 p-0.5 rounded">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
                 </div>
-                <div className="space-y-0.5 px-2">
+                <div className="space-y-px px-2">
                   {loading ? null : voiceChannels.length === 0 ? (
-                    <p className="text-[10px] text-[#6d6f78] px-2 py-1">Henüz ses kanalı yok</p>
+                    <p className="text-[10px] text-[#4f5259] px-2 py-1 italic">Henüz ses kanalı yok</p>
                   ) : voiceChannels.map((ch) => (
                     <ChannelRow
                       key={ch.id} channel={ch}
@@ -448,7 +462,8 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
 
               {/* Create channel form */}
               {creating && (
-                <div className="px-2 space-y-1.5">
+                <div className="mx-2 bg-[#232428] rounded-lg p-2 space-y-1.5 animate-slide-in border border-[#383A40]/60">
+                  <p className="text-[10px] font-bold text-[#72767d] uppercase tracking-widest px-0.5">Kanal Oluştur</p>
                   {/* Type toggle */}
                   <div className="flex gap-1 bg-[#1e1f22] rounded-lg p-1">
                     {[
@@ -457,10 +472,10 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
                     ].map(({ value, label }) => (
                       <button key={value} onClick={() => setChannelType(value)}
                         className={[
-                          'flex-1 py-1 rounded-md text-[11px] font-semibold transition-colors',
+                          'flex-1 py-1 rounded-md text-[11px] font-semibold transition-all duration-150',
                           channelType === value
-                            ? 'bg-[#5865F2] text-white'
-                            : 'text-[#949BA4] hover:text-white',
+                            ? 'bg-[#5865F2] text-white shadow-sm'
+                            : 'text-[#72767d] hover:text-white',
                         ].join(' ')}>
                         {label}
                       </button>
@@ -474,7 +489,7 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
                       if (e.key === 'Escape') cancelCreate()
                     }}
                     placeholder={channelType === 'voice' ? 'ses-kanalı' : 'yeni-kanal'}
-                    className="w-full bg-[#1e1f22] text-white text-xs rounded-md px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-[#5865F2] placeholder-[#949BA4]/50"
+                    className="w-full bg-[#1e1f22] text-white text-xs rounded-md px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-[#5865F2] placeholder-[#949BA4]/40"
                   />
                   {chError && <p className="text-red-400 text-[10px] px-0.5">{chError}</p>}
                   <div className="flex gap-1.5">

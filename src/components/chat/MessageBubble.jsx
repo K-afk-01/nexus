@@ -102,7 +102,7 @@ function MediaAttachment({ message }) {
 /* ── Action bar (hover) ─────────────────────────────────── */
 function ActionBar({ message, isOwnMsg, onDelete, onPickEmoji, showEmoji, onToggleEmoji }) {
   return (
-    <div className="absolute right-2 -top-4 hidden group-hover:flex items-center gap-0.5 bg-[#2B2D31] border border-[#383A40] rounded-lg shadow-lg px-1 py-0.5 z-10">
+    <div className="absolute right-2 -top-5 hidden group-hover:flex items-center gap-0.5 bg-[#2B2D31] border border-[#383A40] rounded-lg shadow-xl px-1 py-0.5 z-10 animate-slide-in">
       {/* Emoji react */}
       <div className="relative">
         <button onClick={onToggleEmoji}
@@ -141,7 +141,7 @@ function FullBubble({ message, onDelete, onReact }) {
   }
 
   return (
-    <div className="group relative flex items-start gap-3 py-1 px-2 -mx-2 rounded-lg hover:bg-white/[0.03] transition-colors mt-3 first:mt-0">
+    <div className="group relative flex items-start gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-white/[0.04] transition-colors duration-100 mt-4 first:mt-0">
       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 mt-0.5 select-none"
         style={{ backgroundColor: color }}>
         {initial}
@@ -204,7 +204,7 @@ function CompactBubble({ message, onDelete, onReact }) {
   }
 
   return (
-    <div className="group relative flex items-start gap-3 py-0.5 px-2 -mx-2 rounded-lg hover:bg-white/[0.03] transition-colors">
+    <div className="group relative flex items-start gap-3 py-0.5 px-2 -mx-2 rounded-lg hover:bg-white/[0.04] transition-colors duration-100">
       <div className="w-10 shrink-0 flex justify-center pt-0.5">
         <span className="text-[10px] text-[#949BA4] opacity-0 group-hover:opacity-100 transition-opacity select-none">
           {hhmm}

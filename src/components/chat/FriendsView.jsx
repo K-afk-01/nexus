@@ -44,7 +44,7 @@ function RequestCard({ req, myUid }) {
   }
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-[#2B2D31] rounded-xl">
+    <div className="flex items-center gap-3 p-3 bg-[#2B2D31] rounded-xl border border-[#383A40]/50 hover:border-[#404249] transition-colors">
       <Avatar uid={req.fromUid} photoURL={req.fromPhotoURL} name={req.fromName} size="lg" />
       <div className="flex-1 min-w-0">
         <p className="text-white font-semibold text-sm truncate">{req.fromName}</p>
@@ -85,7 +85,7 @@ function FriendCard({ friend, myUid, onMessage }) {
   }
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-[#2B2D31] hover:bg-[#383A40] rounded-xl transition-colors group">
+    <div className="flex items-center gap-3 p-3 bg-[#2B2D31] hover:bg-[#32353B] rounded-xl transition-colors duration-100 group border border-transparent hover:border-[#404249]/50">
       <div className="relative shrink-0">
         <Avatar uid={friend.uid} photoURL={profile?.photoURL} name={name} size="lg" />
         <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#313338] ${online ? 'bg-green-400' : 'bg-gray-500'}`} />
@@ -136,8 +136,10 @@ export default function FriendsView({ onSelectChat }) {
   const tabBtn = (key, label, badge) => (
     <button onClick={() => setTab(key)}
       className={[
-        'px-4 py-2 text-sm font-medium rounded-md transition-colors relative',
-        tab === key ? 'bg-[#404249] text-white' : 'text-[#949BA4] hover:text-[#DCDDDE] hover:bg-[#35373C]',
+        'px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-100 relative',
+        tab === key
+          ? 'bg-[#404249] text-white'
+          : 'text-[#72767d] hover:text-[#DCDDDE] hover:bg-[#35373C]',
       ].join(' ')}>
       {label}
       {badge > 0 && (
@@ -151,13 +153,14 @@ export default function FriendsView({ onSelectChat }) {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#313338]">
       {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-[#1e1f22] shrink-0">
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-[#1e1f22] shrink-0 shadow-sm">
+        <svg className="w-5 h-5 text-[#949BA4] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
         <span className="font-bold text-white">Arkadaşlar</span>
-        <div className="ml-4 flex gap-1">
+        <div className="w-px h-5 bg-[#3f4147] mx-1" />
+        <div className="flex gap-0.5">
           {tabBtn('all', 'Tümü', 0)}
           {tabBtn('pending', 'Bekleyen', requests.length)}
           {tabBtn('add', 'Arkadaş Ekle', 0)}

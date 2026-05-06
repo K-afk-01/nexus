@@ -25,25 +25,24 @@ function UserTile({ user, isMe }) {
       <div className="relative">
         <div
           className={[
-            'w-16 h-16 rounded-full flex items-center justify-center font-bold text-white text-2xl',
-            user.muted ? 'opacity-60' : '',
+            'w-16 h-16 rounded-full flex items-center justify-center font-bold text-white text-2xl transition-opacity',
+            user.muted ? 'opacity-50' : '',
           ].join(' ')}
           style={{ backgroundColor: avatarColor(user.uid) }}
         >
           {(user.displayName || '?')[0].toUpperCase()}
         </div>
-        {/* speaking ring (decorative — Agora doesn't expose volume easily) */}
         {!user.muted && (
-          <span className="absolute inset-0 rounded-full ring-2 ring-green-400 animate-pulse" />
+          <span className="absolute inset-0 rounded-full ring-2 ring-green-400/70" />
         )}
         {user.muted && (
-          <span className="absolute -bottom-1 -right-1 bg-red-500 rounded-full p-0.5">
-            <MicOffIcon className="w-3 h-3 text-white" />
+          <span className="absolute -bottom-0.5 -right-0.5 bg-[#1e1f22] rounded-full p-1">
+            <MicOffIcon className="w-3 h-3 text-red-400" />
           </span>
         )}
       </div>
       <span className="text-xs text-[#DCDDDE] font-medium">
-        {user.displayName}{isMe ? ' (Sen)' : ''}
+        {user.displayName}{isMe ? <span className="text-[#949BA4]"> (Sen)</span> : ''}
       </span>
     </div>
   )

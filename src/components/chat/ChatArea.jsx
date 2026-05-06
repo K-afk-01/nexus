@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, Fragment } from 'react'
 import { useMessages, useSendMessage, useDMMessages, useSendDM } from '../../hooks/useChat'
 import {
   deleteMessage, addReaction, removeReaction, createInvite,
@@ -12,6 +12,30 @@ import MessageBubble from './MessageBubble'
 import useAuthStore from '../../store/useAuthStore'
 
 const GROUP_WINDOW_MS = 5 * 60 * 1000
+
+/* ── Date separator ──────────────────────────────────────── */
+function formatSeparatorDate(ts) {
+  const d         = new Date(ts)
+  const now       = new Date()
+  const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const yesterday = today - 86_400_000
+  const msgDay    = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  if (msgDay === today)     return 'Bugün'
+  if (msgDay === yesterday) return 'Dün'
+  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function DateSeparator({ timestamp }) {
+  return (
+    <div className="flex items-center gap-3 my-5 px-1 select-none">
+      <div className="flex-1 h-px bg-[#3f4147]" />
+      <span className="text-[11px] text-[#949BA4] font-medium shrink-0 px-1">
+        {formatSeparatorDate(timestamp)}
+      </span>
+      <div className="flex-1 h-px bg-[#3f4147]" />
+    </div>
+  )
+}
 
 /* ── Icons ───────────────────────────────────────────────── */
 function HashIcon({ className = 'w-5 h-5' }) {
@@ -303,7 +327,7 @@ export default function ChatArea({ chat, serverId, memberCount = 0 }) {
       </div>
 
       {/* Message list */}
-      <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-2 flex flex-col">
+      <div ref={listRef} className="flex-1 overflow-y-auto px-4 pt-4 pb-2 flex flex-col">
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-[#5865F2] border-t-transparent rounded-full animate-spin" />
@@ -320,17 +344,23 @@ export default function ChatArea({ chat, serverId, memberCount = 0 }) {
           <>
             {messages.map((msg, i) => {
               const prev    = messages[i - 1]
+              const msgDay  = msg.timestamp   ? new Date(msg.timestamp).toDateString()  : null
+              const prevDay = prev?.timestamp ? new Date(prev.timestamp).toDateString() : null
+              const newDay  = msgDay !== prevDay
               const compact = !!prev
                 && prev.authorId === msg.authorId
                 && (msg.timestamp ?? 0) - (prev.timestamp ?? 0) < GROUP_WINDOW_MS
+                && !newDay
               return (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  compact={compact}
-                  onDelete={handleDelete}
-                  onReact={handleReact}
-                />
+                <Fragment key={msg.id}>
+                  {newDay && msg.timestamp && <DateSeparator timestamp={msg.timestamp} />}
+                  <MessageBubble
+                    message={msg}
+                    compact={compact}
+                    onDelete={handleDelete}
+                    onReact={handleReact}
+                  />
+                </Fragment>
               )
             })}
             <div ref={bottomRef} className="h-4 shrink-0" />
@@ -339,11 +369,11 @@ export default function ChatArea({ chat, serverId, memberCount = 0 }) {
       </div>
 
       {/* Input */}
-      <div className="px-4 pb-5 pt-0 bg-[#313338] shrink-0">
+      <div className="px-4 pb-6 pt-2 bg-[#313338] shrink-0">
         {pendingFile && (
           <FilePreview file={pendingFile} onRemove={() => setPendingFile(null)} />
         )}
-        <div className="bg-[#383A40] rounded-xl flex items-end gap-2 px-3 py-3">
+        <div className="bg-[#383A40] rounded-xl flex items-end gap-2 px-3 py-2.5 shadow-inner">
           {/* Attach file */}
           <button onClick={() => fileInputRef.current?.click()}
             className="text-[#949BA4] hover:text-white transition-colors shrink-0 p-0.5">
