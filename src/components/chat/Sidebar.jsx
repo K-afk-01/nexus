@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { createChannel, createUserServer, joinServerById } from '../../services/chatService'
+import { createChannel, createUserServer, joinServerById, joinByInvite } from '../../services/chatService'
 import { auth } from '../../services/firebase'
 import { signInAnonymously } from 'firebase/auth'
 import { useChannels, useDMList, useFriendRequests } from '../../hooks/useChat'
 import { getUserProfile } from '../../services/userService'
 import useAuthStore from '../../store/useAuthStore'
 import ProfileModal from '../profile/ProfileModal'
+
 
 /* ── Helpers ─────────────────────────────────────────────── */
 const COLORS = [
@@ -71,20 +72,20 @@ function ServerModal({ onClose, onSuccess }) {
   }
 
   async function handleJoin() {
-    const trimmed = joinId.trim()
-    if (!trimmed) return
-    setLoading(true)
-    setError('')
-    try {
-      const result = await joinServerById(trimmed, uid, displayName)
-      onSuccess(result)
-      onClose()
-    } catch (e) {
-      setError(e.message || 'Sunucuya katılırken hata oluştu.')
-    } finally {
-      setLoading(false)
-    }
+  const trimmed = joinId.trim()
+  if (!trimmed) return
+  setLoading(true)
+  setError('')
+  try {
+    const sid = await joinByInvite(trimmed, uid, displayName) // ✅
+    onSuccess({ serverId: sid, defaultChannelId: null })
+    onClose()
+  } catch (e) {
+    setError(e.message || 'Sunucuya katılırken hata oluştu.')
+  } finally {
+    setLoading(false)
   }
+}
 
   const inputCls = 'w-full bg-[#1e1f22] text-white text-sm rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-[#5865F2] placeholder-[#949BA4]/50'
 
@@ -312,6 +313,7 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
   const [newName,         setNewName]         = useState('')
   const [chError,         setChError]         = useState('')
   const [chSaving,        setChSaving]        = useState(false)
+  const [channelType,     setChannelType]     = useState('text')
   const inputRef    = useRef(null)
   const onSelectRef = useRef(onSelectChat)
   useEffect(() => { onSelectRef.current = onSelectChat }, [onSelectChat])
@@ -326,7 +328,7 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
     if (mode !== 'servers' || loading || channels.length === 0) return
     if (selectedChat?.type === 'channel') return
     const ch = channels.find((c) => c.name === 'genel') ?? channels[0]
-    onSelectRef.current({ type: 'channel', id: ch.id, name: ch.name })
+    onSelectRef.current({ type: 'channel', id: ch.id, name: ch.name, channelType: ch.type ?? 'text' })
   }, [channels, loading, mode, selectedChat?.type])
 
   useEffect(() => {
@@ -335,6 +337,20 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
 
   const textChannels  = channels.filter((c) => c.type === 'text')
   const voiceChannels = channels.filter((c) => c.type === 'voice')
+
+  function openCreate(type = 'text') {
+    setChannelType(type)
+    setCreating(true)
+    setNewName('')
+    setChError('')
+  }
+
+  function cancelCreate() {
+    setCreating(false)
+    setNewName('')
+    setChError('')
+    setChannelType('text')
+  }
 
   async function handleCreateChannel() {
     const name = newName.trim().toLowerCase()
@@ -346,11 +362,11 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
     setChError('')
     try {
       if (!auth.currentUser) await signInAnonymously(auth)
-      const newChannelId = await createChannel(serverId, name, 'text')
+      const newChannelId = await createChannel(serverId, name, channelType)
       setNewName('')
       setCreating(false)
-      // ✅ Yeni oluşturulan kanala otomatik geç
-      onSelectChat({ type: 'channel', id: newChannelId, name })
+      setChannelType('text')
+      onSelectChat({ type: 'channel', id: newChannelId, name, channelType })
     } catch (e) {
       setChError('Kanal oluşturulamadı, tekrar dene')
       console.error('[createChannel]', e)
@@ -388,7 +404,7 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
               <div>
                 <div className="flex items-center justify-between px-4 mb-1">
                   <span className="text-[10px] font-semibold text-[#949BA4] uppercase tracking-widest">Kanallar</span>
-                  <button onClick={() => setCreating((v) => !v)} title="Kanal Oluştur"
+                  <button onClick={() => openCreate('text')} title="Metin Kanalı Oluştur"
                     className="text-[#949BA4] hover:text-white transition-colors">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -400,51 +416,76 @@ export default function Sidebar({ serverId, servers = [], onSelectServer, select
                     <ChannelRow
                       key={ch.id} channel={ch}
                       active={selectedChat?.type === 'channel' && selectedChat.id === ch.id}
-                      onClick={() => onSelectChat({ type: 'channel', id: ch.id, name: ch.name })}
+                      onClick={() => onSelectChat({ type: 'channel', id: ch.id, name: ch.name, channelType: 'text' })}
                     />
                   ))}
                 </div>
-                {creating && (
-                  <div className="mt-2 px-2 space-y-1.5">
-                    <input
-                      ref={inputRef} type="text" value={newName}
-                      onChange={(e) => { setNewName(e.target.value); setChError('') }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter')  handleCreateChannel()
-                        if (e.key === 'Escape') { setCreating(false); setNewName(''); setChError('') }
-                      }}
-                      placeholder="yeni-kanal"
-                      className="w-full bg-[#1e1f22] text-white text-xs rounded-md px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-[#5865F2] placeholder-[#949BA4]/50"
-                    />
-                    {chError && <p className="text-red-400 text-[10px] px-0.5">{chError}</p>}
-                    <div className="flex gap-1.5">
-                      <button onClick={handleCreateChannel} disabled={chSaving}
-                        className="flex-1 py-1 bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50 text-white text-xs rounded-md font-medium transition-colors">
-                        {chSaving ? '…' : 'Oluştur'}
-                      </button>
-                      <button onClick={() => { setCreating(false); setNewName(''); setChError('') }}
-                        className="flex-1 py-1 bg-[#383A40] hover:bg-[#404249] text-[#DCDDDE] text-xs rounded-md transition-colors">
-                        İptal
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Voice channels */}
-              {!loading && voiceChannels.length > 0 && (
-                <div>
-                  <div className="px-4 mb-1">
-                    <span className="text-[10px] font-semibold text-[#949BA4] uppercase tracking-widest">Ses Kanalları</span>
-                  </div>
-                  <div className="space-y-0.5 px-2">
-                    {voiceChannels.map((ch) => (
-                      <ChannelRow
-                        key={ch.id} channel={ch}
-                        active={selectedChat?.type === 'channel' && selectedChat.id === ch.id}
-                        onClick={() => onSelectChat({ type: 'channel', id: ch.id, name: ch.name })}
-                      />
+              <div>
+                <div className="flex items-center justify-between px-4 mb-1">
+                  <span className="text-[10px] font-semibold text-[#949BA4] uppercase tracking-widest">Ses Kanalları</span>
+                  <button onClick={() => openCreate('voice')} title="Ses Kanalı Oluştur"
+                    className="text-[#949BA4] hover:text-white transition-colors">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="space-y-0.5 px-2">
+                  {loading ? null : voiceChannels.length === 0 ? (
+                    <p className="text-[10px] text-[#6d6f78] px-2 py-1">Henüz ses kanalı yok</p>
+                  ) : voiceChannels.map((ch) => (
+                    <ChannelRow
+                      key={ch.id} channel={ch}
+                      active={selectedChat?.type === 'channel' && selectedChat.id === ch.id}
+                      onClick={() => onSelectChat({ type: 'channel', id: ch.id, name: ch.name, channelType: 'voice' })}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Create channel form */}
+              {creating && (
+                <div className="px-2 space-y-1.5">
+                  {/* Type toggle */}
+                  <div className="flex gap-1 bg-[#1e1f22] rounded-lg p-1">
+                    {[
+                      { value: 'text',  label: '# Metin' },
+                      { value: 'voice', label: '🔊 Ses' },
+                    ].map(({ value, label }) => (
+                      <button key={value} onClick={() => setChannelType(value)}
+                        className={[
+                          'flex-1 py-1 rounded-md text-[11px] font-semibold transition-colors',
+                          channelType === value
+                            ? 'bg-[#5865F2] text-white'
+                            : 'text-[#949BA4] hover:text-white',
+                        ].join(' ')}>
+                        {label}
+                      </button>
                     ))}
+                  </div>
+                  <input
+                    ref={inputRef} type="text" value={newName}
+                    onChange={(e) => { setNewName(e.target.value); setChError('') }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter')  handleCreateChannel()
+                      if (e.key === 'Escape') cancelCreate()
+                    }}
+                    placeholder={channelType === 'voice' ? 'ses-kanalı' : 'yeni-kanal'}
+                    className="w-full bg-[#1e1f22] text-white text-xs rounded-md px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-[#5865F2] placeholder-[#949BA4]/50"
+                  />
+                  {chError && <p className="text-red-400 text-[10px] px-0.5">{chError}</p>}
+                  <div className="flex gap-1.5">
+                    <button onClick={handleCreateChannel} disabled={chSaving}
+                      className="flex-1 py-1 bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-50 text-white text-xs rounded-md font-medium transition-colors">
+                      {chSaving ? '…' : 'Oluştur'}
+                    </button>
+                    <button onClick={cancelCreate}
+                      className="flex-1 py-1 bg-[#383A40] hover:bg-[#404249] text-[#DCDDDE] text-xs rounded-md transition-colors">
+                      İptal
+                    </button>
                   </div>
                 </div>
               )}

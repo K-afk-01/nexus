@@ -5,28 +5,33 @@ import Sidebar from '../components/chat/Sidebar'
 import ChatArea from '../components/chat/ChatArea'
 import UserListPanel from '../components/chat/UserListPanel'
 import FriendsView from '../components/chat/FriendsView'
+import VoiceChannel from '../components/chat/VoiceChannel'
 import { updateUserProfile } from '../services/userService'
 import { useMembers, useUserServers } from '../hooks/useChat'
 import { auth } from '../services/firebase'
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'
 
 function AppShell({ serverId, selectedChat, onSelectChat, memberCount }) {
-  const isDM      = selectedChat?.type === 'dm'
-  const isFriends = selectedChat?.type === 'friends'
-  const isChannel = selectedChat?.type === 'channel'
+  const isDM          = selectedChat?.type === 'dm'
+  const isFriends     = selectedChat?.type === 'friends'
+  const isChannel     = selectedChat?.type === 'channel'
+  const isVoice       = isChannel && selectedChat?.channelType === 'voice'
+  const isTextChannel = isChannel && !isVoice
 
   return (
     <div className="flex flex-1 min-w-0 min-h-0">
       {isFriends ? (
         <FriendsView onSelectChat={onSelectChat} />
+      ) : isVoice ? (
+        <VoiceChannel channel={selectedChat} />
       ) : (
         <>
           <ChatArea
             chat={selectedChat}
-            serverId={isChannel ? serverId : null}
+            serverId={isTextChannel ? serverId : null}
             memberCount={memberCount}
           />
-          {isChannel && (
+          {isTextChannel && (
             <UserListPanel
               serverId={serverId}
               onOpenDM={onSelectChat}
@@ -165,7 +170,9 @@ export default function App() {
             </svg>
           </button>
           <span className="text-white font-semibold text-sm">
-            {selectedChat?.type === 'channel' ? `#${selectedChat.name}` : selectedChat?.type === 'dm' ? selectedChat.partnerName : 'Nexus'}
+            {selectedChat?.type === 'channel'
+              ? (selectedChat.channelType === 'voice' ? `🔊 ${selectedChat.name}` : `#${selectedChat.name}`)
+              : selectedChat?.type === 'dm' ? selectedChat.partnerName : 'Nexus'}
           </span>
         </div>
 
